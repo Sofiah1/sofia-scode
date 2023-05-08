@@ -87,7 +87,7 @@ class Projectile {
         this.dmg = damage;
         this.width = 10;
         this.height = 10;
-       // this.dmg = 20;
+        //this.dmg = 20;
         this.speed = 5;
     }
     update(){
@@ -102,24 +102,29 @@ class Projectile {
         ctx.fill();
     }
 }
+
 function handleProjectiles(){
     for (let i = 0; i < projectiles.length; i++){
+        //update and draw each projectile
         projectiles[i].update();
         projectiles[i].draw();
         for (let j = 0; j < enemies.length; j++){
+            //iterate through enemies and if they make contact decrease health and remove projectile
             if (enemies[j] && projectiles[i] && collision(projectiles[i], enemies[j])){
+                //enemies[j].health -= projectiles[i].dmg;
                 enemies[j].health -= projectiles[i].dmg;
+
                 projectiles.splice(i, 1);
                 i--;
             }
         }
+        //remove projectile if out of range
         if (projectiles[i] && projectiles[i].x > canvas.width - cellSize){
             projectiles.splice(i, 1);
             i--;
         }
     }
 }
-
 //these are the defenders
 const unit1attack = new Image();
 unit1attack.src = 'cat1Attack.png';
@@ -149,6 +154,8 @@ class Unit {
         this.unitType = unit1idle;
         this.hasShot = false;
         this.chosenUnit = chosenUnit;
+        this.shootNow = false;
+        this.dmg = 0;
     }
     draw(){
         //ctx.fillStyle = 'blue';
@@ -169,7 +176,11 @@ class Unit {
         this.timer++;
         if (this.canShoot){
             this.hasShot = false;
+            this.shootNow = false;
             for (let i = 0; i < enemyVert.length; i++){
+                if(this.frameX==1){
+                    this.shootNow = true;
+                }
                 if (this.y == enemyVert[i]){
                     if (this.chosenUnit == 1){
                         this.maxFrame = 1;
@@ -180,19 +191,23 @@ class Unit {
                         this.unitType = unit2attack;
                     }
                     if (!this.hasShot){
-                        if (this.timer % 100 == 0){
+                       if (this.timer % 100 == 0){
                             this.hasShot = true;
-                            projectiles.push(new Projectile(this.x + cellSize/2, this.y + 50, this.dmg));
-                        }
+                            if(this.chosenUnit == 1){
+                                this.dmg = 20;}else if(this.chosenUnit==2){this.dmg=40;}
+                                projectiles.push(new Projectile(this.x + cellSize/2, this.y + 50, this.dmg));
+                            }
+                       }
                     }
                 }
             }
-        }
+        
 
         if (frame % 15 == 0){
             if (this.frameX < this.maxFrame) this.frameX++;
             else this.frameX = this.minFrame;
         }
+
     }
     
 }
@@ -421,7 +436,7 @@ function handleResources(){
             // if green powerup is selected, health gets reset to max
             else if(current_resource.color == 'green'){
                 this.dmg = 20;
-                this.health = maxHealth; 
+                this.health = this.maxHealth; 
             }
             // // else if(current_resource.color = 'blue'){
             //     this.dmg = 20;
@@ -475,13 +490,21 @@ canvas.addEventListener('click', function(){
     }
     let UnitCost = 100;
     if(mouse.x > 95 && mouse.x < 995 && mouse.y > 90 && mouse.y < 590){
-    if(money >= UnitCost){
-        units.push(new Unit(gridPositionX,gridPositionY));
-        money -= UnitCost;
-    } else{
+        if(money >= UnitCost){
+            var myUnit = new Unit(gridPositionX,gridPositionY);
+            units.push(myUnit);
+            if(myUnit.chosenUnit == 1){
+                money -= UnitCost;
+            }else if(myUnit.chosenUnit == 2){
+                money -= UnitCost*1.5;}
+            }
+        else{
         floatingMessages.push(new floatingMessage("need more resources", mouse.x, mouse.y, 20, "blue"));
-    }}
-});
+
+        }
+    }
+})
+    
 
 function animate(){
     ctx.clearRect(0,0,canvas.width, canvas.height);
@@ -496,6 +519,7 @@ function animate(){
     handleGameStatus();
     handleFloatingMessages();
     frame++;
+    money+=1;
     if (!endGame) requestAnimationFrame(animate);
 }
 animate();
